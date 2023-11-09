@@ -45,15 +45,15 @@ function createCloseBtn(li) {
   li.append(closeBtn);
 }
 
-listEl.addEventListener('click', handleTaskState);
+listEl.addEventListener('click', handleTask);
 
-function handleTaskState({ target }) {
+function handleTask({ target }) {
   if (target.nodeName === 'LI') {
     target.classList.toggle('checked');
     return;
   }
 
-  if (target.classList.contains('close')) {
+  if (target.nodeName === 'SPAN') {
     target.parentNode.remove();
   }
 }
