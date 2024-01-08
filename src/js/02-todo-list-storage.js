@@ -11,25 +11,26 @@ Write a Todo-list where you can create, delete items and save the list in local 
 4. write the logic for removing the task from the page and for updating the status of the task.
 */
 
-const inpulEl = document.getElementById('myInput');
+import { save, load, remove, clear } from './localStorage.js';
+
+const inputEl = document.getElementById('myInput');
 const addBtn = document.getElementById('addBtn');
 const listEl = document.getElementById('myUL');
 
 let currentId = 0;
 const tasksArray = [];
 
-// click on addBtn //
-addBtn.addEventListener('click', addTask);
+addBtn.addEventListener('click', () => {
+  const inputValue = inputEl.value.trim();
 
-function addTask() {
-  if (inpulEl.value === '') {
-    alert('Please, write a task !');
+  if (inputValue === '') {
+    alert('Please, fill the field');
     return;
   }
 
-  createLi(inpulEl.value);
-  inpulEl.value = '';
-}
+  createLi(inputValue);
+  inputEl.value = '';
+});
 
 function createLi(text) {
   const liEl = document.createElement('li');
@@ -50,18 +51,7 @@ function createTaskObj(li) {
   task.ID = li.getAttribute('id');
   tasksArray.push(task);
 
-  sendDataLocal();
-
-  console.log(tasksArray);
-}
-
-function sendDataLocal() {
-  const dataForSent = JSON.stringify(tasksArray);
-  localStorage.setItem('tasks', dataForSent);
-}
-
-function removeDataLocal() {
-  localStorage.removeItem('tasks');
+  save('tasks', tasksArray);
 }
 
 function createCloseBtn(li) {
@@ -71,10 +61,7 @@ function createCloseBtn(li) {
   li.append(closeBtn);
 }
 
-// click on li(body) or X //
-listEl.addEventListener('click', handleTask);
-
-function handleTask({ target }) {
+listEl.addEventListener('click', ({ target }) => {
   if (target.nodeName === 'LI') {
     target.classList.toggle('checked');
     updateTaskStatus(target);
@@ -85,112 +72,68 @@ function handleTask({ target }) {
     target.parentNode.remove();
     currentId -= 1;
 
-    const targetId = target.parentNode.getAttribute('id');
-    deleteTaskObj(targetId);
+    deleteTaskObj(target);
     updateId();
   }
-}
+});
 
 function updateTaskStatus(target) {
+  const targetId = target.getAttribute('id');
+  const indexTaskStatusUpdate = tasksArray.findIndex(
+    task => task.ID == targetId
+  );
+
   if (target.classList.contains('checked')) {
-    const targetId = target.getAttribute('id');
-    const indexTaskStatusUpdate = tasksArray.findIndex(
-      task => task.ID == targetId
-    );
     tasksArray[indexTaskStatusUpdate].isDone = true;
   }
 
   if (!target.classList.contains('checked')) {
-    const targetId = target.getAttribute('id');
-    const indexTaskStatusUpdate = tasksArray.findIndex(
-      task => task.ID == targetId
-    );
     tasksArray[indexTaskStatusUpdate].isDone = false;
   }
 
-  sendDataLocal();
-  console.log(' dupa ce am scjimbat starea task-ul', tasksArray);
+  save('tasks', tasksArray);
 }
 
-function deleteTaskObj(targetId) {
+function deleteTaskObj(target) {
+  const targetId = target.parentNode.getAttribute('id');
   const indexTaskForDelete = tasksArray.findIndex(task => task.ID == targetId);
-  tasksArray.splice(indexTaskForDelete, 1);
 
-  console.log(' dupa ce am sters task-ul', tasksArray);
+  tasksArray.splice(indexTaskForDelete, 1);
 }
 
 function updateId() {
   if (currentId > 0) {
     const liArray = listEl.querySelectorAll('li');
+
     for (let i = 0; i < currentId; i++) {
       liArray[i].setAttribute('id', i);
       tasksArray[i].ID = i;
     }
 
-    sendDataLocal();
+    save('tasks', tasksArray);
     return;
   }
 
   if (currentId === 0) {
-    removeDataLocal();
+    remove('tasks');
   }
 }
 
 // Reload page //
-window.addEventListener('DOMContentLoaded', fillTaskList);
+window.addEventListener('DOMContentLoaded', () => {
+  const dataSavedObj = load('tasks');
 
-function fillTaskList() {
-  debugger;
-  const dataSavedObj = JSON.parse(localStorage.getItem('tasks'));
-
-  dataSavedObj.forEach(task => {
-    if (task.isDone === true) {
+  if (dataSavedObj) {
+    dataSavedObj.forEach(task => {
       createLi(task.text);
 
-      // const taskId = task.ID;
+      if (task.isDone === true) {
+        const liChecked = document.getElementById(task.ID);
+        liChecked.classList.add('checked');
 
-      const liChecked = document.getElementById(task.ID);
-      liChecked.classList.add('checked');
-
-      tasksArray[task.ID].isDone = true;
-
-      sendDataLocal();
-      return;
-    }
-
-    createLi(task.text);
-  });
-}
-
-// function handleLiStatus() {
-//   const li
-// }
-
-// function updateTasksArray(targetId) {
-//   const indexTaskForDelete = tasksArray.findIndex(task => task.ID === targetId);
-//   tasksArray.splice(indexTaskForDelete, 1);
-
-//   console.log(tasksArray);
-
-//   tasksArray.
-// }
-
-// function deleteTaskObj(targetId) {
-//   debugger;
-//   const indexTaskForDelete = tasksArray.findIndex(task => task.ID === targetId);
-//   tasksArray.splice(indexTaskForDelete, 1);
-
-//   console.log(' dupa ce am sters task-ul', tasksArray);
-// }
-
-// function updateTasksId() {
-//   if (currentId === 0) {
-//     return;
-//   }
-
-//   for (let i = 0; i < currentId; i++) {
-//     tasksArray[i].ID = i;
-//   }
-
-//   console.log(tasksArray);
-// }
+        tasksArray[task.ID].isDone = true;
+        save('tasks', tasksArray);
+      }
+    });
+  }
+});

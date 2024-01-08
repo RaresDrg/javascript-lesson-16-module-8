@@ -103,6 +103,8 @@ input {
 
 /* Style the "Add" button */
 .addBtn {
+  height: 38.67px;
+  line-height: 16px;
   padding: 10px;
   width: 25%;
   background: #d9d9d9;
